@@ -194,8 +194,58 @@ body.nomember #confBtn{display:none!important}
 .msel option{background:#151518;color:var(--text)}
 .crow{flex-wrap:wrap}.crow>div{flex:1 1 180px}
 </style>
+<style id="sealCss">
+html.sealed body>*:not(#seal):not(script){display:none!important}
+#seal{display:none}
+html.sealed #seal{display:flex}
+#seal{position:fixed;inset:0;z-index:2147483647;background:radial-gradient(ellipse 60% 50% at 50% 40%,rgba(150,160,178,.14),transparent 70%),#000;color:#f0f1f4;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:calc(env(safe-area-inset-top,0px) + 24px) 20px calc(env(safe-area-inset-bottom,0px) + 24px);overflow:auto}
+#seal .se{font:500 11px/1 "Inter",system-ui,sans-serif;letter-spacing:.32em;text-transform:uppercase;color:#7d8088}
+#seal h1{font:500 clamp(34px,8vw,60px)/1.1 "Cormorant Garamond",Georgia,serif;letter-spacing:.02em;margin:16px 0 10px}
+#seal p{font:400 16px/1.6 "Inter",system-ui,sans-serif;color:#a9adb5;max-width:440px}
+#seal .sc{display:flex;gap:clamp(10px,3vw,22px);margin:34px 0 26px}
+#seal .sc div{min-width:68px;padding:16px 10px;border:1px solid #34353a;border-radius:16px;background:#151518}
+#seal .sc b{display:block;font:500 clamp(30px,8vw,46px)/1 "Cormorant Garamond",Georgia,serif;font-variant-numeric:tabular-nums}
+#seal .sc small{display:block;margin-top:8px;font:500 10px/1 "Inter",system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#7d8088}
+#seal svg{width:44px;height:44px;color:#dfe3ea;margin-bottom:22px}
+</style>
 </head>
 <body class="locked">
+<div id="seal" role="alert" aria-live="polite">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+  <span class="se">Access suspended</span>
+  <h1>The site is sealed</h1>
+  <p>Entry is closed for everyone. The doors reopen when the countdown ends.</p>
+  <div class="sc"><div><b id="sealD">00</b><small>Days</small></div><div><b id="sealH">00</b><small>Hours</small></div><div><b id="sealM">00</b><small>Minutes</small></div><div><b id="sealS">00</b><small>Seconds</small></div></div>
+</div>
+<script>
+/* SITE LOCK: sealed for everyone until 2026-11-17T22:37:43Z. The real enforcement is on the server (illuminati-site / illuminati-archive); this is the visible side. */
+(function(){
+var until=1794955063000,root=document.documentElement,timer=null;
+function pad(n){return(n<10?"0":"")+n}
+function tick(){
+  var left=until-Date.now();
+  if(left<=0){clearInterval(timer);if(root.classList.contains("sealed")){root.classList.remove("sealed");location.reload()}return}
+  var s=Math.floor(left/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+  document.getElementById("sealD").textContent=pad(d);document.getElementById("sealH").textContent=pad(h);
+  document.getElementById("sealM").textContent=pad(m);document.getElementById("sealS").textContent=pad(s%60);
+}
+function seal(u){
+  if(typeof u==="number"&&u>Date.now())until=u;
+  root.classList.add("sealed");tick();if(!timer)timer=setInterval(tick,1000);
+}
+if(Date.now()<until)seal();
+/* While sealed, no request leaves the page. If the server ever reports a seal (for example a wrong device clock), show the lock screen with the server's time. */
+var f=window.fetch;
+window.fetch=function(){
+  if(Date.now()<until)return Promise.resolve(new Response(JSON.stringify({ok:false,sealed:true,until:until,error:"The website is sealed."}),{headers:{"Content-Type":"application/json"}}));
+  return f.apply(this,arguments).then(function(r){
+    try{r.clone().json().then(function(j){if(j&&j.sealed)seal(j.until)}).catch(function(){})}catch(e){}
+    return r;
+  });
+};
+})();
+</script>
+
 <div id="gate"><form class="gate-card" id="gateForm" autocomplete="off" novalidate>
   <img class="chrome mark" data-mark width="244" height="900" alt="ILLUMINATI">
   <span class="eyebrow">Members only</span>
